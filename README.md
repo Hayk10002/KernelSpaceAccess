@@ -3,6 +3,7 @@
 ## Table of Contents
 - [Introduction](#introduction)
 - [Build and Run](#build-and-run)
+- [Example Output](#example-output)
 - [How does this work](#how-does-this-work)
 
 ## Introduction
@@ -28,6 +29,16 @@ $ cmake --build build --config Debug
 # Run the executable with the path to the target file as an argument.
 $ your/path/to/exe/main.exe
 # example - .../main.exe
+```
+
+## Example Output
+```
+local start estimated:            0x7ffee9ee3000
+local end estimated:              0x7ffeeaee2fff
+global init start estimated:      0x560b9d596000
+global init end estimated:        0x560b9d5c0fff
+global non-init start estimated:  0x560b9d596000
+global non-init end estimated:    0x560b9d5c0fff
 ```
 
 ## How does this work

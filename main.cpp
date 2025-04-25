@@ -5,6 +5,7 @@
 #include <optional>
 #include <algorithm>
 #include <random>
+#include <format>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -97,12 +98,12 @@ int main() {
     while (auto val = val_at_address((unsigned char*)global_non_init_start)) global_non_init_start--;
     while (auto val = val_at_address((unsigned char*)global_non_init_end))   global_non_init_end++;
 
-    std::cout << "local start estimated: " << (void*)local_start << std::endl;
-    std::cout << "local end estimated: " << (void*)local_end << std::endl;
-    std::cout << "global init start estimated: " << (void*)global_init_start << std::endl;
-    std::cout << "global init end estimated: " << (void*)global_init_end << std::endl;
-    std::cout << "global non-init start estimated: " << (void*)global_non_init_start << std::endl;
-    std::cout << "global non-init end estimated: " << (void*)global_non_init_end << std::endl;
+    std::cout << std::format("local start estimated:            {}\n" ,(void*)++local_start);
+    std::cout << std::format("local end estimated:              {}\n" ,(void*)--local_end);
+    std::cout << std::format("global init start estimated:      {}\n" ,(void*)++global_init_start);
+    std::cout << std::format("global init end estimated:        {}\n" ,(void*)--global_init_end);
+    std::cout << std::format("global non-init start estimated:  {}\n" ,(void*)++global_non_init_start);
+    std::cout << std::format("global non-init end estimated:    {}\n" ,(void*)--global_non_init_end);
     
     return 0;
 }

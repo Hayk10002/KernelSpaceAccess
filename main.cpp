@@ -70,16 +70,16 @@ int generateRandomNumber(int min, int max) {
 }
 
 int global_init = 10;
-int global_init2[98] = { REP_98(0x0102030405060708) };
-int global_init3 = 0x0807060504030201;
+int global_init2[98] = { REP_98((int)0x0102030405060708) };
+int global_init3 = (int)0x0807060504030201;
 
 int global_non_init[300];
 
 int main() {
 
     int local = 20;
-    int local2[98] = { REP_98(0x090a0b0c0d0e0f10) };
-    int local3 = 0x100f0e0d0c0b0a09;
+    int local2[98] = { REP_98((int)0x090a0b0c0d0e0f10) };
+    int local3 = (int)0x100f0e0d0c0b0a09;
 
     std::generate(global_non_init, global_non_init + 300, []() {
         static int i = 0;

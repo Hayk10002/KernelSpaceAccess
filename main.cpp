@@ -18,7 +18,7 @@
 // ----------------------------------
 // Windows SEH version
 // ----------------------------------
-void val_at_address(unsigned char* addr) {
+std::optional<unsigned char> val_at_address(unsigned char* addr) {
     __try {
         return *addr;
     } __except (EXCEPTION_EXECUTE_HANDLER) {

@@ -3,9 +3,10 @@
 ## Table of Contents
 - [Introduction](#introduction)
 - [Build and Run](#build-and-run)
+- [How does this work](#how-does-this-work)
 
 ## Introduction
-This program scans the memory segment starting from the start of the stack, ending at the end of the heap, trying to access the memory locations with a step, then it handles the segfaults or access violations to show what regions are accessible. 
+This program estimates the memory regions allocated for local, global initialized, and global uninitialized variables. 
 
 ## Build and Run
 To clone and run this project, you'll need [Git](https://git-scm.com) and [CMake](https://cmake.org/) installed on your computer. From your command line:
@@ -28,3 +29,7 @@ $ cmake --build build --config Debug
 $ your/path/to/exe/main.exe
 # example - .../main.exe
 ```
+
+## How does this work
+
+This program tries to estimate the memory regions by starting from somewhere in the middle of the regions, and then tries accessing the memory going to the start and end of the regions. When it fails, that means that the start of the end of the region is reached.

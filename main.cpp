@@ -2,6 +2,9 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <optional>
+#include <algorithm>
+#include <random>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -11,23 +14,15 @@
 #include <setjmp.h>
 #endif
 
-constexpr size_t STEP = 64;
-
-#if defined(_WIN32) && defined(_MSC_VER)
+#if defined(_WIN32) && defined(_MSC_VER)    
 // ----------------------------------
 // Windows SEH version
 // ----------------------------------
-void scan_memory_windows(uintptr_t start, uintptr_t end) {
-    std::cout << "Scanning memory (Windows SEH) from 0x" << std::hex << start
-              << " to 0x" << end << "...\n";
-
-    for (uintptr_t addr = start; addr < end; addr += STEP) {
-        __try {
-            volatile unsigned char val = *reinterpret_cast<unsigned char*>(addr);
-            std::cout << "0x" << std::hex << addr << ": " << std::dec << (int)val << "\n";
-        } __except (EXCEPTION_EXECUTE_HANDLER) {
-            std::cout << "Access violation at 0x" << std::hex << addr << "\n";
-        }
+void val_at_address(unsigned char* addr) {
+    __try {
+        return *addr;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return std::nullopt;
     }
 }
 #else
@@ -49,39 +44,65 @@ void install_signal_handler() {
     sigaction(SIGSEGV, &sa, nullptr);
 }
 
-void scan_memory_posix(uintptr_t start, uintptr_t end) {
+std::optional<unsigned char> val_at_address(unsigned char* addr) {
     install_signal_handler();
-    std::cout << "Scanning memory (POSIX) from 0x" << std::hex << start
-              << " to 0x" << end << "...\n";
 
-    for (uintptr_t addr = start; addr < end; addr += STEP) {
-        if (sigsetjmp(jump_buffer, 1) == 0) {
-            volatile unsigned char val = *reinterpret_cast<unsigned char*>(addr);
-            std::cout << "0x" << std::hex << addr << ": " << std::dec << (int)val << "\n";
-        } else {
-            std::cout << "Access violation at 0x" << std::hex << addr << "\n";
-        }
-    }
+    if (sigsetjmp(jump_buffer, 1) == 0) return *addr;
+    else                                return std::nullopt;
 }
 #endif
 
-int global_var = 42;
+#define REP_1(e) e
+#define REP_2(e) REP_1(e), REP_1(e)
+#define REP_4(e) REP_2(e), REP_2(e)
+#define REP_8(e) REP_4(e), REP_4(e)
+#define REP_16(e) REP_8(e), REP_8(e)
+#define REP_32(e) REP_16(e), REP_16(e)
+#define REP_64(e) REP_32(e), REP_32(e)
+#define REP_96(e) REP_64(e), REP_32(e)
+#define REP_98(e) REP_96(e), REP_2(e)
+
+int generateRandomNumber(int min, int max) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(min, max);
+    return dis(gen);
+}
+
+int global_init = 10;
+int global_init2[98] = { REP_98(0x0102030405060708) };
+int global_init3 = 0x0807060504030201;
+
+int global_non_init[300];
 
 int main() {
-    int stack_var = 0;
-    void* heap_ptr = malloc(1);
-    uintptr_t stack_addr = reinterpret_cast<uintptr_t>(&stack_var);
-    uintptr_t heap_addr = reinterpret_cast<uintptr_t>(heap_ptr);
-    free(heap_ptr);
 
-    uintptr_t start = std::min(stack_addr, heap_addr);
-    uintptr_t end   = std::max(stack_addr, heap_addr);
+    int local = 20;
+    int local2[98] = { REP_98(0x090a0b0c0d0e0f10) };
+    int local3 = 0x100f0e0d0c0b0a09;
 
-#if defined(_WIN32)
-    scan_memory_windows(start, end);
-#else
-    scan_memory_posix(start, end);
-#endif
+    std::generate(global_non_init, global_non_init + 300, []() {
+        static int i = 0;
+        return i++;
+    });
 
+    unsigned char *local_start = (unsigned char*)&(local2[generateRandomNumber(0, 97)]), *local_end = local_start;
+    unsigned char *global_init_start = (unsigned char*)&(global_init2[generateRandomNumber(0, 97)]), *global_init_end = global_init_start;
+    unsigned char *global_non_init_start = (unsigned char*)&(global_non_init[generateRandomNumber(0, 299)]), *global_non_init_end = global_non_init_start;
+
+    while (auto val = val_at_address((unsigned char*)local_start))           local_start--;
+    while (auto val = val_at_address((unsigned char*)local_end))             local_end++;
+    while (auto val = val_at_address((unsigned char*)global_init_start))     global_init_start--;
+    while (auto val = val_at_address((unsigned char*)global_init_end))       global_init_end++;
+    while (auto val = val_at_address((unsigned char*)global_non_init_start)) global_non_init_start--;
+    while (auto val = val_at_address((unsigned char*)global_non_init_end))   global_non_init_end++;
+
+    std::cout << "local start estimated: " << (void*)local_start << std::endl;
+    std::cout << "local end estimated: " << (void*)local_end << std::endl;
+    std::cout << "global init start estimated: " << (void*)global_init_start << std::endl;
+    std::cout << "global init end estimated: " << (void*)global_init_end << std::endl;
+    std::cout << "global non-init start estimated: " << (void*)global_non_init_start << std::endl;
+    std::cout << "global non-init end estimated: " << (void*)global_non_init_end << std::endl;
+    
     return 0;
 }
